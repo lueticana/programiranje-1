@@ -25,6 +25,11 @@ medved. Zvrhano zibelko sladkih hrušk mi je prinesel za en sam izdrt trn"."""
 # >>> find_words(test_text, 'de')
 # {'izdere', 'debel', 'oddide', 'začudeno'}
 ###############################################################################
+import re
+
+def find_words(text, niz):
+    vzorec = r'\b\w*' + niz + r'\w*\b'
+    return set(re.findall(vzorec, text))
 
 
 ###############################################################################
@@ -35,6 +40,9 @@ medved. Zvrhano zibelko sladkih hrušk mi je prinesel za en sam izdrt trn"."""
 # {'zibala', 'zibel', 'zibelko'}
 ###############################################################################
 
+def find_prefix(text, predpona):
+    vzorec = r'\b' + predpona + r'\w*\b'
+    return set(re.findall(vzorec, text))
 
 ###############################################################################
 # 3) Sestavite funkcijo [find_suffix], ki vrne množico vseh besed, ki se
