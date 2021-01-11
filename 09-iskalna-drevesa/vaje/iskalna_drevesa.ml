@@ -82,6 +82,11 @@ let rec size tree =
  Node (Node (Empty, true, Empty), true, Node (Empty, true, Empty)))
 [*----------------------------------------------------------------------------*)
 
+let rec map_tree f tree =
+     match tree with
+     | Prazno -> Prazno
+     | Vozlisce (levo, x, desno) ->
+          Vozlisce (map_tree f levo, f x, map_tree f desno)
 
 (*----------------------------------------------------------------------------*]
  Funkcija [list_of_tree] pretvori drevo v seznam. Vrstni red podatkov v seznamu
@@ -91,6 +96,11 @@ let rec size tree =
  - : int list = [0; 2; 5; 6; 7; 11]
 [*----------------------------------------------------------------------------*)
 
+let rec list_of_tree tree =
+     match tree with
+     | Prazno -> []
+     | Vozlisce (levo, x, desno) ->
+          list_of_tree levo @ [x] @ list_of_tree desno
 
 (*----------------------------------------------------------------------------*]
  Funkcija [is_bst] preveri ali je drevo binarno iskalno drevo (Binary Search 
@@ -102,6 +112,16 @@ let rec size tree =
  # test_tree |> mirror |> is_bst;;
  - : bool = false
 [*----------------------------------------------------------------------------*)
+
+let is_bst tree =
+     let l = list_of_tree tree in
+     let rec is_sorted sez =
+          match sez with
+          | [] -> true
+          | [_] -> true
+          | a :: b :: rest -> a < b && (is_sorted (b :: rest))
+     in
+     is_sorted l
 
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
@@ -118,6 +138,21 @@ let rec size tree =
  - : bool = false
 [*----------------------------------------------------------------------------*)
 
+let rec insert element tree =
+     match tree with
+     | Prazno -> leaf element
+     | Vozlisce (levo, x, desno) ->
+          if element = x then tree
+          else if element < x then Vozlisce (insert element levo, x, desno)
+          else Vozlisce (levo, x, insert element desno)
+
+let rec member element tree =
+     match tree with 
+     | Prazno -> false
+     | Vozlisce (levo, x, desno) ->
+          if x = element then true
+          else if x < element then (member element levo)
+          else member element desno 
 
 (*----------------------------------------------------------------------------*]
  Funkcija [member2] ne privzame, da je drevo bst.
@@ -126,6 +161,10 @@ let rec size tree =
  funkcije [member2] na drevesu z n vozlišči, ki ima globino log(n). 
 [*----------------------------------------------------------------------------*)
 
+let rec mamber2 element = function
+     | Prazno -> false
+     | Vozlisce (levo, x, desno) ->
+          x = element || member element desno || member element levo
 
 (*----------------------------------------------------------------------------*]
  Funkcija [succ] vrne naslednjika korena danega drevesa, če obstaja. Za drevo
@@ -140,6 +179,28 @@ let rec size tree =
  - : int option = None
 [*----------------------------------------------------------------------------*)
 
+let rec najmanjsi tree =
+     match tree with
+     | Prazno -> None
+     | Vozlisce (Prazno, x, _) -> Some x
+     | Vozlisce (levo, _, _) -> najmanjsi levo
+
+let rec najvecji tree =
+     match tree with
+     | Prazno -> None
+     | Vozlisce (_, x, Prazno) -> Some x
+     | Vozlisce (_, _, desno) -> najvecji desno
+
+
+let succ tree =
+     match tree with 
+     | Prazno -> None
+     | Vozlisce (_, _, desno) -> najmanjsi desno
+
+let pred tree =
+     match tree with
+     | Prazno -> None
+     | Vozlisce (levo, _, _) -> najvecji levo
 
 (*----------------------------------------------------------------------------*]
  Na predavanjih ste omenili dva načina brisanja elementov iz drevesa. Prvi 
@@ -154,6 +215,17 @@ let rec size tree =
  Node (Node (Empty, 6, Empty), 11, Empty))
 [*----------------------------------------------------------------------------*)
 
+let rec delete element tree =
+     match tree with
+     | Prazno -> Prazno
+     | Vozlisce (levo, x, desno) ->
+          if element < x then Vozlisce(delete element levo, x, desno)
+          else if element > x then Vozlisce(levo, x, delete element desno)
+          else 
+               let nas = succ (Vozlisce (levo, x, desno)) in
+               match nas with
+               | None -> levo
+               | Some nas -> Vozlisce(levo, nas, delete nas desno)
 
 (*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*]
  SLOVARJI
@@ -166,6 +238,7 @@ let rec size tree =
  vrednosti, ga parametriziramo kot [('key, 'value) dict].
 [*-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=*)
 
+type ('key, 'value) dict = ('key * 'value) tree
 
 (*----------------------------------------------------------------------------*]
  Napišite testni primer [test_dict]:
@@ -176,6 +249,8 @@ let rec size tree =
      "c":-2
 [*----------------------------------------------------------------------------*)
 
+let test_dict =
+     Vozlisce (leaf ("a", 0), ("b", 1), Vozlisce (leaf ("c", -2), ("d", 2), Prazno))
 
 (*----------------------------------------------------------------------------*]
  Funkcija [dict_get key dict] v slovarju poišče vrednost z ključem [key]. Ker
@@ -187,6 +262,13 @@ let rec size tree =
  - : int option = Some (-2)
 [*----------------------------------------------------------------------------*)
 
+let dict_get k dict =
+     match dict with
+     | Prazno -> None
+     | Vozlisce (levo, (k', v') desno) ->
+          if k < k' then dict_get k levo
+          else if k > k' then dict_get k desno
+          else Some v'
       
 (*----------------------------------------------------------------------------*]
  Funkcija [print_dict] sprejme slovar s ključi tipa [string] in vrednostmi tipa
@@ -204,6 +286,13 @@ let rec size tree =
  - : unit = ()
 [*----------------------------------------------------------------------------*)
 
+let print_dict dict =
+     match dict with
+     | Prazno -> ()
+     | Vozlisce (levo, (k, v), desno) ->
+          print_endline (k ^ " : " ^ (string_of_int v));
+          print_dict levo;
+          print_dict desno
 
 (*----------------------------------------------------------------------------*]
  Funkcija [dict_insert key value dict] v slovar [dict] pod ključ [key] vstavi
@@ -224,3 +313,10 @@ let rec size tree =
  - : unit = ()
 [*----------------------------------------------------------------------------*)
 
+let rec dict_insert key value dict =
+     match dict with
+     | Prazno -> leaf (key, value)
+     | Vozlisce (levo, (k', v'), desno) ->
+          if  key < k' then Vozlisce(desno, (k', v'), dict_insert key value levo)
+          else if key > k' then  Vozlisce (dict_insert key value (k', v'), desno)
+          else Vozlisce (levo, (key, value), desno)

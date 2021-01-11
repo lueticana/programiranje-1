@@ -21,6 +21,20 @@ let test_matrix =
      [| 2 ; 4 ; 5 |];
      [| 7 ; 0 ; 1 |] |]
 
+let max_cheese cheese_matrix =
+  let rec rekurzija i j vrednost=
+    let vrednost = vrednost + cheese_matrix.(i). (j) in
+    let visina = Array.length cheese_matrix in
+    let sirina = Array.length cheese_matrix in
+    if i = visina - 1 && j = sirina - 1 then vrednost
+    else if i = visina -1 then rekurzija i (j + 1) (vrednost)
+    else if j = sirina -1 then rekurzija (i + 1) j (vrednost)
+    else max (rekurzija (i + 1) j (vrednost)) (rekurzija i (j + 1) (vrednost) )
+  in
+  rekurzija 0 0 0
+
+
+
 (*----------------------------------------------------------------------------*]
  Rešujemo problem sestavljanja alternirajoče obarvanih stolpov. Imamo štiri
  različne tipe gradnikov, dva modra in dva rdeča. Modri gradniki so višin 2 in
